@@ -54,6 +54,8 @@
                (assoc
                  noop-test
                  :name      "elasticsearch"
+                 :ssh       { :username "root"
+                              :private-key-path "~/.ssh/id_rsa" }
                  :os        debian/os
                  :db        db
                  :client    (create-set-client)
@@ -62,26 +64,40 @@
                                               :set  checker/set})
                  :nemesis   isolate-self-primaries-nemesis
                  ;:nemesis   (nemesis/partition-random-node)
-                 ;:nemesis   (nemesis/partition-random-halves)
                  ;:nemesis   (nemesis/partition-halves)
+                 ;:nemesis   (nemesis/partition-random-halves)                 
                  ;:nemesis   (nemesis/partitioner nemesis/bridge)
                  :generator (gen/phases
+                              
                               (->> (range)
-                                   (map (fn [x] {:type  :invoke
-                                                 :f     :add
-                                                 :value x}))
+                                   
+                                   (map (fn [x] {:type  :invoke :f :add :value x}))
+
                                    gen/seq
+                                   
                                    (gen/stagger 1/10)
-                                   (gen/delay 1)
-                                   (gen/nemesis
+                                   
+                                   (gen/delay 1) ;delay between batches
+                                   
+                                  (gen/nemesis
                                      (gen/seq
-                                         [(gen/sleep 30)
-                                          {:type :info :f :start}
-                                          (gen/sleep 200)
-                                          {:type :info :f :stop}]))
-                                   (gen/time-limit 300))
+                                       (cycle [(gen/sleep 5)
+                                               {:type :info :f :start}
+                                               (gen/sleep 200)
+                                               {:type :info :f :stop}])))                                   
+
+                                  ; (gen/nemesis
+                                  ;   (gen/seq
+                                  ;       [(gen/sleep 0)
+                                  ;        {:type :info :f :start}
+                                  ;        (gen/sleep 30)
+                                  ;        {:type :info :f :stop}]))
+
+                                   (gen/time-limit 1200))
+
                               (gen/nemesis
                                 (gen/once {:type :info :f :stop}))
+
                               (gen/clients
                                 (gen/once {:type :invoke :f :read})))))]
     (is (:valid? (:results test)))
