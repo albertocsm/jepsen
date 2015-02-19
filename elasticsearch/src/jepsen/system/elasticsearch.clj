@@ -73,7 +73,7 @@
     (setup! [_ test node]
       (c/su
         (c/cd "/tmp"
-              (let [version "1.1.0"
+              (let [version "1.4.3"
                     debfile (str "elasticsearch-" version ".deb")
                     uri     (str "https://download.elasticsearch.org/"
                                  "elasticsearch/elasticsearch/"
